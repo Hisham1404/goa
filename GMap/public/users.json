@@ -1,0 +1,140 @@
+[
+  {
+    "id": 1,
+    "role": "admin",
+    "email": "admin@example.com",
+    "password": "admin123",
+    "name": "Admin User"
+  },
+  {
+    "id": 2,
+    "role": "general",
+    "email": "general@example.com",
+    "password": "general123",
+    "name": "General User",
+    "applicationStats": [
+      { "totalApplications": 3 },
+      { "pendingApplications": 1 },
+      { "approvedApplications": 2 }
+    ],
+    "recentApplications": [
+      {
+        "id": "12345",
+        "submissionDate": "2025-03-01",
+        "status": "Pending"
+      },
+      {
+        "id": "12346",
+        "submissionDate": "2025-02-28",
+        "status": "Approved"
+      },
+      {
+        "id": "12347",
+        "submissionDate": "2025-02-27",
+        "status": "Rejected"
+      }
+    ],
+    "notifications": [
+      {
+        "message": "Your application #12345 has been approved. Download your certificate now!",
+        "type": "success"
+      },
+      {
+        "message": "Your application was rejected due to missing documents. Please update and resubmit.",
+        "type": "error"
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "role": "general",
+    "email": "general2@example.com",
+    "password": "general234",
+    "name": "General User 2",
+    "applicationStats": [
+      { "totalApplications": 5 },
+      { "pendingApplications": 2 },
+      { "approvedApplications": 3 }
+    ],
+    "recentApplications": [
+      {
+        "id": "22345",
+        "submissionDate": "2025-03-05",
+        "status": "Pending"
+      },
+      {
+        "id": "22346",
+        "submissionDate": "2025-03-02",
+        "status": "Approved"
+      },
+      {
+        "id": "22347",
+        "submissionDate": "2025-03-01",
+        "status": "Rejected"
+      }
+    ],
+    "notifications": [
+      {
+        "message": "Your application #22346 has been approved. Download your certificate now!",
+        "type": "success"
+      },
+      {
+        "message": "Your application #22347 was rejected. Please update and resubmit.",
+        "type": "error"
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "role": "general",
+    "email": "general3@example.com",
+    "password": "general345",
+    "name": "General User 3",
+    "applicationStats": [
+      { "totalApplications": 4 },
+      { "pendingApplications": 1 },
+      { "approvedApplications": 3 }
+    ],
+    "recentApplications": [
+      {
+        "id": "32345",
+        "submissionDate": "2025-03-10",
+        "status": "Pending"
+      },
+      {
+        "id": "32346",
+        "submissionDate": "2025-03-08",
+        "status": "Approved"
+      },
+      {
+        "id": "32347",
+        "submissionDate": "2025-03-07",
+        "status": "Rejected"
+      }
+    ],
+    "notifications": [
+      {
+        "message": "Your application #32346 has been approved. Download your certificate now!",
+        "type": "success"
+      },
+      {
+        "message": "Your application #32347 was rejected. Please update and resubmit.",
+        "type": "error"
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "role": "dslr",
+    "email": "dslr1@example.com",
+    "password": "dslr123",
+    "name": "DSLR Officer 1"
+  },
+  {
+    "id": 6,
+    "role": "dslr",
+    "email": "dslr2@example.com",
+    "password": "dslr123",
+    "name": "DSLR Officer 2"
+  }
+]
