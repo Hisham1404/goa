@@ -284,18 +284,18 @@ def _add_flipped_reference_image(pdf: PDFReport, reference_image_path: Optional[
                 # Find contours of the plot
                 contours, _ = cv2.findContours(binary_inv, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-                # Create white canvas and draw only boundaries in black
-                outline = np.ones_like(gray, dtype=np.uint8) * 255
+                # Create white 3-channel canvas and draw only boundaries in light blue
+                outline_bgr = np.ones((gray.shape[0], gray.shape[1], 3), dtype=np.uint8) * 255
+                # Light blue color: RGB(173,216,230) => BGR(230,216,173)
+                light_blue_bgr = (230, 216, 173)
                 if contours:
-                    cv2.drawContours(outline, contours, -1, color=0, thickness=2)
+                    cv2.drawContours(outline_bgr, contours, -1, color=light_blue_bgr, thickness=2)
                 else:
                     # Fallback: morphological gradient to approximate edges
                     kernel = np.ones((3, 3), np.uint8)
                     edge = cv2.morphologyEx(binary_inv, cv2.MORPH_GRADIENT, kernel)
-                    outline[edge > 0] = 0
+                    outline_bgr[edge > 0] = light_blue_bgr
 
-                # Convert back to 3-channel for saving consistency
-                outline_bgr = cv2.cvtColor(outline, cv2.COLOR_GRAY2BGR)
                 # Flip vertically per original behavior
                 flipped_ref_image = cv2.flip(outline_bgr, 0)
 
