@@ -8,6 +8,7 @@ It creates comprehensive reports with images, comparison data, and formatted lay
 import os
 import cv2
 import tempfile
+import numpy as np
 from typing import List, Dict, Optional, Any
 
 # Import PDF library (with check)
@@ -275,7 +276,29 @@ def _add_flipped_reference_image(pdf: PDFReport, reference_image_path: Optional[
         try:
             ref_image = cv2.imread(reference_image_path)
             if ref_image is not None:
-                flipped_ref_image = cv2.flip(ref_image, 0)
+                # Convert to grayscale for contour extraction
+                gray = cv2.cvtColor(ref_image, cv2.COLOR_BGR2GRAY)
+                # Threshold so the plot region (originally black) becomes white on black
+                _, binary_inv = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
+
+                # Find contours of the plot
+                contours, _ = cv2.findContours(binary_inv, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+                # Create white canvas and draw only boundaries in black
+                outline = np.ones_like(gray, dtype=np.uint8) * 255
+                if contours:
+                    cv2.drawContours(outline, contours, -1, color=0, thickness=2)
+                else:
+                    # Fallback: morphological gradient to approximate edges
+                    kernel = np.ones((3, 3), np.uint8)
+                    edge = cv2.morphologyEx(binary_inv, cv2.MORPH_GRADIENT, kernel)
+                    outline[edge > 0] = 0
+
+                # Convert back to 3-channel for saving consistency
+                outline_bgr = cv2.cvtColor(outline, cv2.COLOR_GRAY2BGR)
+                # Flip vertically per original behavior
+                flipped_ref_image = cv2.flip(outline_bgr, 0)
+
                 # Create a named temporary file for the flipped image
                 with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_f:
                     temp_ref_image_path = temp_f.name
