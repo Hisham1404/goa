@@ -23,12 +23,12 @@ import os
 class ImageComparator:
     """Enhanced Image Comparator using EfficientNetV2-S (replaces VGG16)"""
     
-    def __init__(self, model_size='S'):
+    def __init__(self):
         """
-        Initialize with EfficientNetV2
-        model_size: 'S' (small - recommended), 'M' (medium), or 'L' (large)
+        Initialize with EfficientNetV2-S model.
+        Uses the 'S' (small) variant with 21M parameters for optimal speed/accuracy balance.
         """
-        self.model_size = model_size
+        self.model_size = 'S'
         self.input_size = 384  # EfficientNetV2-S optimal input size
         self.model = self._load_model()
     
