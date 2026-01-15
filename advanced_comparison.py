@@ -58,7 +58,6 @@ class ImageComparator:
             img = pil_img.convert('RGB').resize((self.input_size, self.input_size))
             img_array = img_to_array(img)
             img_array = np.expand_dims(img_array, axis=0)
-            # EfficientNetV2 preprocessing
             img_array = preprocess_input(img_array)
             return img_array
         except Exception as e:
@@ -107,8 +106,10 @@ class ImageComparator:
 
 def run_advanced_comparison(reference_image_path, comparison_image_paths):
     """
-    Performs EfficientNetV2 comparison between a reference image and 
-    vertically flipped versions of comparison images.
+    Performs advanced deep learning-based comparison between a reference image 
+    and vertically flipped versions of comparison images.
+    
+    Currently uses EfficientNetV2-S for feature extraction.
     
     Args:
         reference_image_path (str): Path to the reference image.
