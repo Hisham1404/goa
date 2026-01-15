@@ -8,7 +8,9 @@ Provides multiple metrics for comprehensive shape comparison:
 - Hausdorff Distance
 - Structural Similarity (SSIM)
 - Area Ratio
-- Shape Context Descriptor
+- Perimeter Ratio
+- Compactness Similarity
+- Centroid Distance
 """
 
 import numpy as np
