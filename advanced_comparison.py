@@ -2,12 +2,13 @@
 import numpy as np
 import tensorflow as tf
 try:
-    from tensorflow.keras.applications import EfficientNetV2S
+    from tensorflow.keras.applications.efficientnet_v2 import EfficientNetV2S, preprocess_input
     from tensorflow.keras.models import Model
     from tensorflow.keras.utils import img_to_array
 except ImportError:
     print("ERROR: TensorFlow/Keras not found. Please install it: pip install tensorflow")
     EfficientNetV2S = None
+    preprocess_input = None
 
 try:
     from PIL import Image
@@ -23,17 +24,16 @@ class ImageComparator:
     
     def __init__(self):
         """Initialize with EfficientNetV2-S"""
-        self.model_size = 'S'
         self.input_size = 384
         self.model = self._load_model()
     
     def _load_model(self):
-        """Load EfficientNetV2 model"""
+        """Load EfficientNetV2-S model"""
         if EfficientNetV2S is None:
             print("EfficientNetV2 model cannot be loaded due to missing TensorFlow/Keras.")
             return None
         try:
-            print(f"Loading EfficientNetV2-{self.model_size} model (this may take a moment)...")
+            print("Loading EfficientNetV2-S model (this may take a moment)...")
             
             base_model = EfficientNetV2S(
                 weights='imagenet',
@@ -42,7 +42,7 @@ class ImageComparator:
                 input_shape=(self.input_size, self.input_size, 3)
             )
             
-            print(f"EfficientNetV2-{self.model_size} model loaded successfully.")
+            print("EfficientNetV2-S model loaded successfully.")
             return base_model
             
         except Exception as e:
@@ -52,14 +52,14 @@ class ImageComparator:
     
     def _preprocess_pil_image(self, pil_img):
         """Preprocess PIL image for EfficientNetV2"""
-        if self.model is None:
+        if self.model is None or preprocess_input is None:
             return None
         try:
             img = pil_img.convert('RGB').resize((self.input_size, self.input_size))
             img_array = img_to_array(img)
             img_array = np.expand_dims(img_array, axis=0)
             # EfficientNetV2 preprocessing
-            img_array = tf.keras.applications.efficientnet_v2.preprocess_input(img_array)
+            img_array = preprocess_input(img_array)
             return img_array
         except Exception as e:
             print(f"Error during image preprocessing: {e}")
@@ -117,8 +117,8 @@ def run_advanced_comparison(reference_image_path, comparison_image_paths):
     Returns:
         list: Sorted list of tuples (comparison_path, similarity_score).
     """
-    if Image is None:
-        print("Cannot run advanced comparison due to missing Pillow library.")
+    if Image is None or EfficientNetV2S is None:
+        print("Cannot run advanced comparison due to missing libraries (Pillow or TensorFlow).")
         return []
 
     comparator = ImageComparator()
