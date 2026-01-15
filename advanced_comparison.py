@@ -2,14 +2,14 @@
 import numpy as np
 import tensorflow as tf
 try:
-    from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input
+    from tensorflow.keras.applications import EfficientNetV2S
+    from tensorflow.keras.applications.efficientnet_v2 import preprocess_input
     from tensorflow.keras.models import Model
-    from tensorflow.keras.layers import GlobalAveragePooling2D
     from tensorflow.keras.utils import img_to_array
 except ImportError:
     print("ERROR: TensorFlow/Keras not found. Please install it: pip install tensorflow")
     # You might exit here or disable the advanced feature
-    VGG16 = None # Set to None to allow checking later
+    EfficientNetV2S = None # Set to None to allow checking later
 
 try:
     from PIL import Image
@@ -21,87 +21,99 @@ from scipy.spatial.distance import cosine
 import os
 
 class ImageComparator:
-    """Compares images using VGG16 features."""
+    """Enhanced Image Comparator using EfficientNetV2-S (replaces VGG16)"""
+    
     def __init__(self):
-        self.model = self._load_vgg16_model()
-
-    def _load_vgg16_model(self):
-        """Loads the VGG16 model."""
-        if VGG16 is None: # Check if import failed
-            print("VGG16 model cannot be loaded due to missing TensorFlow/Keras.")
+        """
+        Initialize with EfficientNetV2-S model.
+        Uses the 'S' (small) variant with 21M parameters for optimal speed/accuracy balance.
+        """
+        self.model_size = 'S'
+        self.input_size = 384  # EfficientNetV2-S optimal input size
+        self.model = self._load_model()
+    
+    def _load_model(self):
+        """Load EfficientNetV2 model"""
+        if EfficientNetV2S is None: # Check if import failed
+            print("EfficientNetV2 model cannot be loaded due to missing TensorFlow/Keras.")
             return None
         try:
-            print("Loading VGG16 model (this may take a moment)...")
-            # Using pooling='avg' simplifies the model creation slightly
-            base_model = VGG16(weights='imagenet', include_top=False, input_shape=(224, 224, 3), pooling='avg')
-            # The model directly outputs the GAP features now
-            model = Model(inputs=base_model.input, outputs=base_model.output)
-            print("VGG16 model loaded successfully.")
-            return model
+            print(f"Loading EfficientNetV2-{self.model_size} model (this may take a moment)...")
+            
+            base_model = EfficientNetV2S(
+                weights='imagenet',
+                include_top=False,
+                pooling='avg',
+                input_shape=(self.input_size, self.input_size, 3)
+            )
+            
+            print(f"EfficientNetV2-{self.model_size} model loaded successfully.")
+            print(f"  - Parameters: ~21M (vs 138M for VGG16)")
+            print(f"  - Input size: {self.input_size}x{self.input_size}")
+            return base_model
+            
         except Exception as e:
-            print(f"Error loading VGG16 model: {e}")
+            print(f"Error loading EfficientNetV2 model: {e}")
             print("Ensure you have an internet connection for the first download.")
             return None
-
+    
     def _preprocess_pil_image(self, pil_img):
-        """Preprocess PIL image for VGG16"""
-        if self.model is None: return None
+        """Preprocess PIL image for EfficientNetV2"""
+        if self.model is None:
+            return None
         try:
-            # Ensure image is RGB and correct size
-            img = pil_img.convert('RGB').resize((224, 224))
+            img = pil_img.convert('RGB').resize((self.input_size, self.input_size))
             img_array = img_to_array(img)
             img_array = np.expand_dims(img_array, axis=0)
             return preprocess_input(img_array)
         except Exception as e:
-             print(f"Error during image preprocessing: {e}")
-             return None
-
+            print(f"Error during image preprocessing: {e}")
+            return None
+    
     def get_features(self, image_path_or_pil_img):
-        """Extract features from an image (path or PIL object) using VGG16"""
-        if self.model is None: return None
+        """Extract features from an image (path or PIL object)"""
+        if self.model is None:
+            return None
         try:
-            if isinstance(image_path_or_pil_img, str): # If it's a path
-                 if not os.path.exists(image_path_or_pil_img):
-                      print(f"Error: Image path does not exist: {image_path_or_pil_img}")
-                      return None
-                 img = Image.open(image_path_or_pil_img)
-            elif isinstance(image_path_or_pil_img, Image.Image): # If it's a PIL image
-                 img = image_path_or_pil_img
+            if isinstance(image_path_or_pil_img, str):
+                if not os.path.exists(image_path_or_pil_img):
+                    print(f"Error: Image path does not exist: {image_path_or_pil_img}")
+                    return None
+                img = Image.open(image_path_or_pil_img)
+            elif isinstance(image_path_or_pil_img, Image.Image):
+                img = image_path_or_pil_img
             else:
-                 print("Error: Invalid input for get_features. Expecting path or PIL Image.")
-                 return None
+                print("Error: Invalid input for get_features. Expecting path or PIL Image.")
+                return None
 
             img_array = self._preprocess_pil_image(img)
-            if img_array is None: return None
+            if img_array is None:
+                return None
 
             features = self.model.predict(img_array, verbose=0)
             return features.flatten()
         except Exception as e:
             print(f"Error extracting features from image: {e}")
             return None
-
+    
     def compare_features(self, features1, features2):
         """Compare two feature vectors using cosine similarity."""
         if features1 is None or features2 is None:
             print("Cannot compare None features.")
-            return 0.0 # Return lowest similarity if features missing
-        # Ensure vectors are not zero vectors before calculating cosine similarity
+            return 0.0
         if np.all(features1 == 0) or np.all(features2 == 0):
-            # print("Warning: One or both feature vectors are all zeros.")
-            return 0.0 # Or handle as appropriate (e.g., 1.0 if both are zero?)
+            return 0.0
         try:
-             # Cosine distance is 1 - similarity
-             similarity = 1 - cosine(features1, features2)
-             # Handle potential NaN result if vectors somehow are invalid after checks
-             return similarity if not np.isnan(similarity) else 0.0
+            similarity = 1 - cosine(features1, features2)
+            return similarity if not np.isnan(similarity) else 0.0
         except Exception as e:
-             print(f"Error calculating cosine similarity: {e}")
-             return 0.0
+            print(f"Error calculating cosine similarity: {e}")
+            return 0.0
 
-def run_vgg16_comparison(reference_image_path, comparison_image_paths):
+def run_advanced_comparison(reference_image_path, comparison_image_paths):
     """
-    Performs VGG16 comparison between a reference image and vertically
-    flipped versions of comparison images.
+    Performs EfficientNetV2 comparison between a reference image and 
+    vertically flipped versions of comparison images.
 
     Args:
         reference_image_path (str): Path to the reference image.
@@ -111,13 +123,13 @@ def run_vgg16_comparison(reference_image_path, comparison_image_paths):
         list: Sorted list of tuples (comparison_path, similarity_score).
               Returns empty list on major errors (e.g., model load failure).
     """
-    if Image is None or VGG16 is None:
+    if Image is None or EfficientNetV2S is None:
         print("Cannot run advanced comparison due to missing libraries (Pillow or TensorFlow).")
         return []
 
     comparator = ImageComparator()
     if comparator.model is None:
-        print("Failed to initialize VGG16 model. Aborting advanced comparison.")
+        print("Failed to initialize EfficientNetV2 model. Aborting advanced comparison.")
         return []
 
     print("Extracting features for reference image...")
@@ -160,3 +172,6 @@ def run_vgg16_comparison(reference_image_path, comparison_image_paths):
     similarities.sort(key=lambda x: x[1], reverse=True)
     print("Advanced comparison finished.")
     return similarities
+
+# Backward compatibility alias
+run_vgg16_comparison = run_advanced_comparison
