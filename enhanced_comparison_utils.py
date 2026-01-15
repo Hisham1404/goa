@@ -10,7 +10,6 @@ Provides multiple metrics for comprehensive shape comparison:
 - Area Ratio
 - Perimeter Ratio
 - Compactness Similarity
-- Centroid Distance
 """
 
 import numpy as np
@@ -144,11 +143,25 @@ def calculate_hausdorff(mask1, mask2):
         points1 = contours1[0].squeeze()
         points2 = contours2[0].squeeze()
         
-        # Handle edge cases
+        # Handle edge cases - ensure points are 2D arrays with shape (N, 2)
         if points1.ndim == 1:
-            points1 = points1.reshape(1, -1)
+            # Single point or needs reshaping
+            if points1.size >= 2:
+                points1 = points1.reshape(-1, 2)
+            else:
+                return float('inf')
         if points2.ndim == 1:
-            points2 = points2.reshape(1, -1)
+            # Single point or needs reshaping
+            if points2.size >= 2:
+                points2 = points2.reshape(-1, 2)
+            else:
+                return float('inf')
+        
+        # Verify we have valid 2D coordinate arrays
+        if points1.ndim != 2 or points1.shape[1] != 2:
+            return float('inf')
+        if points2.ndim != 2 or points2.shape[1] != 2:
+            return float('inf')
         
         if points1.shape[0] == 0 or points2.shape[0] == 0:
             return float('inf')
@@ -318,7 +331,7 @@ def calculate_compactness_similarity(mask1, mask2):
         return 0.0
 
 
-def comprehensive_compare(ref_mask, comp_mask, weights=None):
+def comprehensive_compare(ref_mask, comp_mask, weights=None, hausdorff_max_distance=None):
     """
     Comprehensive comparison using multiple metrics.
     
@@ -328,6 +341,8 @@ def comprehensive_compare(ref_mask, comp_mask, weights=None):
         ref_mask: Reference binary mask
         comp_mask: Comparison binary mask
         weights: Dictionary of metric weights (optional)
+        hausdorff_max_distance: Maximum expected Hausdorff distance for normalization.
+                                If None, uses image diagonal. (optional)
     
     Returns:
         dict: Contains 'composite_score' and detailed 'metrics'
@@ -357,8 +372,14 @@ def comprehensive_compare(ref_mask, comp_mask, weights=None):
         'hausdorff': calculate_hausdorff(ref_mask, comp_mask)
     }
     
-    # Normalize Hausdorff (lower is better, max reasonable value ~100 pixels)
-    hausdorff_normalized = max(0, 1 - metrics['hausdorff'] / 100) if metrics['hausdorff'] != float('inf') else 0
+    # Normalize Hausdorff (lower is better)
+    # Use image diagonal as max distance if not specified
+    if hausdorff_max_distance is None and ref_mask is not None:
+        hausdorff_max_distance = np.sqrt(ref_mask.shape[0]**2 + ref_mask.shape[1]**2)
+    elif hausdorff_max_distance is None:
+        hausdorff_max_distance = 100  # Fallback default
+    
+    hausdorff_normalized = max(0, 1 - metrics['hausdorff'] / hausdorff_max_distance) if metrics['hausdorff'] != float('inf') else 0
     
     # Calculate weighted composite score
     composite_score = (
@@ -400,10 +421,21 @@ def compare_with_transformations(ref_mask, comp_mask, include_rotations=False):
     }
     
     if include_rotations:
+        # Rotate and resize to match reference dimensions
+        rotated_90 = cv2.rotate(comp_mask, cv2.ROTATE_90_CLOCKWISE)
+        rotated_180 = cv2.rotate(comp_mask, cv2.ROTATE_180)
+        rotated_270 = cv2.rotate(comp_mask, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        
+        # Resize rotated masks if dimensions don't match
+        if rotated_90.shape != ref_mask.shape:
+            rotated_90 = cv2.resize(rotated_90, (ref_mask.shape[1], ref_mask.shape[0]), interpolation=cv2.INTER_NEAREST)
+        if rotated_270.shape != ref_mask.shape:
+            rotated_270 = cv2.resize(rotated_270, (ref_mask.shape[1], ref_mask.shape[0]), interpolation=cv2.INTER_NEAREST)
+        
         transformations.update({
-            'rotate_90': cv2.rotate(comp_mask, cv2.ROTATE_90_CLOCKWISE),
-            'rotate_180': cv2.rotate(comp_mask, cv2.ROTATE_180),
-            'rotate_270': cv2.rotate(comp_mask, cv2.ROTATE_90_COUNTERCLOCKWISE),
+            'rotate_90': rotated_90,
+            'rotate_180': rotated_180,
+            'rotate_270': rotated_270,
         })
     
     best_score = -1
@@ -412,6 +444,10 @@ def compare_with_transformations(ref_mask, comp_mask, include_rotations=False):
     all_results = {}
     
     for name, transformed_mask in transformations.items():
+        # Ensure transformed mask matches reference dimensions
+        if transformed_mask.shape != ref_mask.shape:
+            transformed_mask = cv2.resize(transformed_mask, (ref_mask.shape[1], ref_mask.shape[0]), interpolation=cv2.INTER_NEAREST)
+        
         result = comprehensive_compare(ref_mask, transformed_mask)
         all_results[name] = result
         
