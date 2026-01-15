@@ -3,12 +3,12 @@ import numpy as np
 import tensorflow as tf
 try:
     from tensorflow.keras.applications.efficientnet_v2 import EfficientNetV2S, preprocess_input
-    from tensorflow.keras.models import Model
     from tensorflow.keras.utils import img_to_array
 except ImportError:
     print("ERROR: TensorFlow/Keras not found. Please install it: pip install tensorflow")
     EfficientNetV2S = None
     preprocess_input = None
+    img_to_array = None
 
 try:
     from PIL import Image
