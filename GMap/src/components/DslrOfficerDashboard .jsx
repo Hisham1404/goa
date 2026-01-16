@@ -488,7 +488,7 @@ const DslrOfficerDashboard = () => {
               {/* Advanced Comparison */}
               <div className="border rounded-lg p-4">
                 <h4 className="text-lg font-semibold mb-3">Advanced Comparison</h4>
-                <p className="text-gray-600 mb-4">Uses VGG16 neural network for deep feature analysis and similarity.</p>
+                <p className="text-gray-600 mb-4">Uses DINOv2 vision transformer for deep feature analysis and similarity.</p>
 
                 <button
                   onClick={() => runComparison('advanced')}
@@ -540,8 +540,8 @@ const DslrOfficerDashboard = () => {
                     <button
                       onClick={() => handleApproveMethod('standard')}
                       className={`px-6 py-3 rounded-lg border-2 transition-all ${selectedMethod === 'standard'
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-gray-300 hover:border-blue-300'
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-gray-300 hover:border-blue-300'
                         }`}
                     >
                       <FiDownload className="inline mr-2" />
@@ -552,8 +552,8 @@ const DslrOfficerDashboard = () => {
                     <button
                       onClick={() => handleApproveMethod('advanced')}
                       className={`px-6 py-3 rounded-lg border-2 transition-all ${selectedMethod === 'advanced'
-                          ? 'border-purple-500 bg-purple-50 text-purple-700'
-                          : 'border-gray-300 hover:border-purple-300'
+                        ? 'border-purple-500 bg-purple-50 text-purple-700'
+                        : 'border-gray-300 hover:border-purple-300'
                         }`}
                     >
                       <FiDownload className="inline mr-2" />

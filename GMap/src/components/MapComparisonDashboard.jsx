@@ -30,7 +30,7 @@ const MapComparisonDashboard = () => {
       // Check backend health
       const healthData = await apiService.checkHealth();
       setBackendHealth(healthData);
-      
+
       if (healthData.success) {
         // Load villages
         const villagesData = await apiService.getVillages();
@@ -50,7 +50,7 @@ const MapComparisonDashboard = () => {
     setVillageStructure(null);
     setComparisonResults(null);
     setChosenIndex('');
-    
+
     if (villageName) {
       try {
         setIsLoading(true);
@@ -82,11 +82,11 @@ const MapComparisonDashboard = () => {
     try {
       setIsLoading(true);
       setComparisonResults(null);
-      
+
       const results = await apiService.runComparison(selectedVillage, indexNum, comparisonMethod);
       setComparisonResults(results);
       setSessionId(results.session_id);
-      
+
       if (results.best_match_found) {
         toast.success('Comparison completed successfully!');
       } else {
@@ -110,7 +110,7 @@ const MapComparisonDashboard = () => {
     try {
       setIsPdfGenerating(true);
       const pdfData = await apiService.generatePDF(sessionId, selectedBestRank);
-      
+
       if (pdfData.success) {
         toast.success('PDF generated successfully!');
         // Automatically download the PDF
@@ -152,11 +152,10 @@ const MapComparisonDashboard = () => {
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.3 }}
       >
-        <div className={`p-4 rounded-lg border-2 ${
-          backendHealth?.success 
+        <div className={`p-4 rounded-lg border-2 ${backendHealth?.success
             ? 'bg-green-50 border-green-200 text-green-800'
             : 'bg-red-50 border-red-200 text-red-800'
-        }`}>
+          }`}>
           <div className="flex items-center">
             {backendHealth?.success ? (
               <FaCheckCircle className="mr-2" />
@@ -197,7 +196,7 @@ const MapComparisonDashboard = () => {
           <MdCompare className="mr-2 text-primary" />
           Comparison Configuration
         </h2>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Village Selection */}
           <div>
@@ -254,7 +253,7 @@ const MapComparisonDashboard = () => {
             >
               <option value="standard">Standard (IoU + Hausdorff)</option>
               <option value="advanced" disabled={!backendHealth?.advanced_comparison_available}>
-                Advanced (VGG16) {!backendHealth?.advanced_comparison_available && '- Unavailable'}
+                Advanced (DINOv2) {!backendHealth?.advanced_comparison_available && '- Unavailable'}
               </option>
             </select>
           </div>
@@ -327,7 +326,7 @@ const MapComparisonDashboard = () => {
                     className="appearance-none bg-transparent pr-8 pl-2 py-1.5 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent rounded-md"
                   >
                     {comparisonResults?.results?.slice(0, 5).map((_, idx) => (
-                      <option key={idx+1} value={idx+1}>{idx+1}</option>
+                      <option key={idx + 1} value={idx + 1}>{idx + 1}</option>
                     ))}
                   </select>
                   <FiChevronDown className="absolute right-2 text-gray-500 pointer-events-none" />
@@ -387,7 +386,7 @@ const MapComparisonDashboard = () => {
                     </>
                   ) : (
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      VGG Similarity
+                      DINOv2 Similarity
                     </th>
                   )}
                 </tr>
