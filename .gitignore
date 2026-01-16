@@ -53,3 +53,10 @@ dist/
 
 # Reports
 pdf_reports/*.pdf
+
+
+Share/
+Scripts/
+maps/latambarcem/
+img_reference/
+.env/
