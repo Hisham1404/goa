@@ -3,29 +3,53 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
-.env
-.env*
-env/
-venv/
-*.log
-
-# Node.js / Frontend
-node_modules/
+.Python
+build/
+develop-eggs/
 dist/
-dist-ssr/
-*.local
-.npm/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-# Application Generated Files
-cache/
-img_reference/
-pdf_reports/
-*.pdf
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
 
-# Editor / OS
+# IDEs
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+
+# OS
 .DS_Store
 Thumbs.db
 
-maps/latambarcem
+# Temporary files
+*.tmp
+*.temp
+/tmp/
+cache/
+
+# Build artifacts
+node_modules/
+dist/
+*.log
+
+# Reports
+pdf_reports/*.pdf
