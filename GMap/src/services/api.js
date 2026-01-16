@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Base API configuration
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'http://127.0.0.1:5000/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -61,9 +61,9 @@ export const apiService = {
   },
 
   // Generate PDF report
-  async generatePDF(sessionId) {
+  async generatePDF(sessionId, selectedRank = 1) {
     try {
-      const response = await api.post(`/generate-pdf/${sessionId}`);
+      const response = await api.post(`/generate-pdf/${sessionId}`, { selected_rank: selectedRank });
       return response.data;
     } catch (error) {
       if (error.response?.data?.error) {
@@ -79,7 +79,7 @@ export const apiService = {
       const response = await api.get(`/download-pdf/${filename}`, {
         responseType: 'blob',
       });
-      
+
       // Create blob link to download
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
@@ -89,7 +89,7 @@ export const apiService = {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      
+
       return { success: true };
     } catch (error) {
       throw new Error(`PDF download failed: ${error.message}`);

@@ -53,7 +53,9 @@ const GeneralUserDashboard = () => {
     try {
       // First, generate the PDF
       const pdfResponse = await fetch(`http://localhost:5000/api/generate-pdf/${application.sessionId}`, {
-        method: 'POST'
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ selected_rank: application.selectedRank || 1 })
       });
       
       const pdfData = await pdfResponse.json();
@@ -233,14 +235,7 @@ const GeneralUserDashboard = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <button 
-                      className="bg-secondary text-sidebarText px-3 py-1 rounded mr-2 hover:bg-blue-600 transition"
-                      onClick={() => {
-                        alert(`Application Details:\n\nID: ${application.id}\nType: ${application.type}\nDirection: ${application.direction}\nVillage: ${application.village}\nSurvey Number: ${application.surveyNumber || 'N/A'}\nStatus: ${application.status}\nSubmission Date: ${application.submissionDate}`);
-                      }}
-                    >
-                      View Details
-                    </button>
+                    {/* Details hidden for general user */}
                     {application.status === "Rejected" && (
                       <button className="bg-primary text-sidebarText px-3 py-1 rounded hover:bg-green-600 transition">
                         Reapply
