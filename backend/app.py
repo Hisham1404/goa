@@ -284,6 +284,55 @@ def run_comparison_api(reference_mask, reference_image_path, comparison_method, 
             best_match_base_filename = os.path.splitext(os.path.basename(best_match_source_file))[0]
             best_match_score_info = f"VGG Sim: {comparison_results_list[0]['similarity']:.3f} (Sub-village: {best_match_sub_village})"
 
+    elif comparison_method == 'enhanced':
+        total_processed_files = 0
+        temp_results = []
+        
+        # Iterate through all sub-villages
+        for sub_village in config['sub_villages']:
+            comparison_dat_folder = os.path.join(config['dat_folder_base'], sub_village, 'dat')
+            
+            try:
+                all_comparison_files = [f for f in os.listdir(comparison_dat_folder) if f.lower().endswith('.dat')]
+                if not all_comparison_files: 
+                    continue
+            except Exception as e: 
+                continue
+
+            for dat_filename in all_comparison_files:
+                comparison_dat_path = os.path.join(comparison_dat_folder, dat_filename)
+                comparison_mask = mask_utils.load_dat_as_mask(comparison_dat_path, target_size=(config['image_size'], config['image_size']))
+                if comparison_mask is None: 
+                    continue
+                
+                # Use enhanced comparison
+                result = comparison_utils.compare_masks_enhanced(
+                    reference_mask, comparison_mask,
+                    use_quick_filter=True
+                )
+                total_processed_files += 1
+                
+                # Skip if filtered out
+                if result.get('filtered_out', False):
+                    continue
+                
+                temp_results.append({
+                    "filename": dat_filename, 
+                    "sub_village": sub_village,
+                    "composite_score": result["best_score"],
+                    "transform": result["best_transform"],
+                    "metrics": result.get("metrics", {}),
+                })
+        
+        if temp_results:
+            temp_results.sort(key=lambda x: x["composite_score"], reverse=True)
+            comparison_results_list = temp_results
+            best_match_found = True
+            best_match_source_file = comparison_results_list[0]['filename']
+            best_match_sub_village = comparison_results_list[0]['sub_village']
+            best_match_base_filename = os.path.splitext(best_match_source_file)[0]
+            best_match_score_info = f"Composite: {comparison_results_list[0]['composite_score']:.3f} (Sub-village: {best_match_sub_village})"
+
     return comparison_results_list, best_match_found, best_match_base_filename, best_match_score_info
 
 # API Routes

@@ -5,6 +5,13 @@ from scipy.spatial.distance import directed_hausdorff
 # Import functions from our other utility file
 import mask_utils # Assumes mask_utils.py is in the same directory
 
+# Import enhanced comparison functions
+from enhanced_comparison_utils import (
+    comprehensive_compare,
+    compare_with_transformations,
+    quick_filter
+)
+
 def calculate_iou(mask1, mask2):
     """Calculates Intersection over Union (IoU) for binary masks."""
     if mask1 is None or mask2 is None or mask1.shape != mask2.shape:
@@ -122,3 +129,30 @@ def compare_masks(ref_mask, comp_mask, iou_tolerance=0.01, hausdorff_tolerance=2
         "best_hausdorff": final_best_hausdorff,
         "best_hausdorff_transform": final_best_hausdorff_transform
     }
+
+
+def compare_masks_enhanced(ref_mask, comp_mask, use_quick_filter=True):
+    """
+    Enhanced mask comparison using multiple metrics.
+    
+    This is the recommended comparison method for best accuracy.
+    
+    Args:
+        ref_mask: Reference binary mask
+        comp_mask: Comparison binary mask
+        use_quick_filter: Whether to use quick filtering (default: True)
+    
+    Returns:
+        dict: Contains 'best_score', 'best_transform', 'metrics', and 'filtered_out'
+    """
+    if use_quick_filter and not quick_filter(ref_mask, comp_mask):
+        return {
+            'best_score': 0.0,
+            'best_transform': 'N/A',
+            'metrics': None,
+            'filtered_out': True
+        }
+    
+    result = compare_with_transformations(ref_mask, comp_mask)
+    result['filtered_out'] = False
+    return result
