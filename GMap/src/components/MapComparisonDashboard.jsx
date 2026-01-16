@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FaSearch, FaDownload, FaSpinner, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
-import { MdMap, MdCompare, MdPictureAsPdf } from 'react-icons/md';
+import { MdMap, MdCompare, MdPictureAsPdf, MdLeaderboard } from 'react-icons/md';
+import { FiChevronDown } from 'react-icons/fi';
 import { apiService, handleApiError } from '../services/api';
 import toast from 'react-hot-toast';
 
@@ -17,6 +18,7 @@ const MapComparisonDashboard = () => {
   const [backendHealth, setBackendHealth] = useState(null);
   const [sessionId, setSessionId] = useState(null);
   const [isPdfGenerating, setIsPdfGenerating] = useState(false);
+  const [selectedBestRank, setSelectedBestRank] = useState(1);
 
   // Load initial data
   useEffect(() => {
@@ -107,7 +109,7 @@ const MapComparisonDashboard = () => {
 
     try {
       setIsPdfGenerating(true);
-      const pdfData = await apiService.generatePDF(sessionId);
+      const pdfData = await apiService.generatePDF(sessionId, selectedBestRank);
       
       if (pdfData.success) {
         toast.success('PDF generated successfully!');
@@ -313,20 +315,36 @@ const MapComparisonDashboard = () => {
               <FaCheckCircle className="mr-2 text-green-600" />
               Comparison Results
             </h2>
-            
             {comparisonResults.best_match_found && backendHealth?.pdf_generation_available && (
-              <button
-                onClick={generatePDF}
-                disabled={isPdfGenerating}
-                className="bg-secondary text-white px-4 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center"
-              >
-                {isPdfGenerating ? (
-                  <FaSpinner className="animate-spin mr-2" />
-                ) : (
-                  <MdPictureAsPdf className="mr-2" />
-                )}
-                {isPdfGenerating ? 'Generating...' : 'Generate PDF'}
-              </button>
+              <div className="flex items-center gap-3">
+                <div className="relative flex items-center bg-white border border-gray-200 rounded-lg shadow-sm px-3 py-2 hover:border-gray-300 transition">
+                  <MdLeaderboard className="text-primary mr-2" />
+                  <label className="text-sm text-gray-700 mr-2">Best match</label>
+                  <select
+                    title="Select which result to feature on the first page"
+                    value={selectedBestRank}
+                    onChange={(e) => setSelectedBestRank(parseInt(e.target.value, 10))}
+                    className="appearance-none bg-transparent pr-8 pl-2 py-1.5 text-sm font-medium text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent rounded-md"
+                  >
+                    {comparisonResults?.results?.slice(0, 5).map((_, idx) => (
+                      <option key={idx+1} value={idx+1}>{idx+1}</option>
+                    ))}
+                  </select>
+                  <FiChevronDown className="absolute right-2 text-gray-500 pointer-events-none" />
+                </div>
+                <button
+                  onClick={generatePDF}
+                  disabled={isPdfGenerating}
+                  className="bg-secondary text-white px-4 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center"
+                >
+                  {isPdfGenerating ? (
+                    <FaSpinner className="animate-spin mr-2" />
+                  ) : (
+                    <MdPictureAsPdf className="mr-2" />
+                  )}
+                  {isPdfGenerating ? 'Generating...' : 'Generate PDF'}
+                </button>
+              </div>
             )}
           </div>
 
