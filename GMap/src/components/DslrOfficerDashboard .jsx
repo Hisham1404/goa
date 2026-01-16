@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { FiCheckCircle, FiXCircle, FiSearch, FiX, FiDownload } from "react-icons/fi";
+import { FiCheckCircle, FiXCircle, FiSearch, FiX, FiDownload, FiChevronDown } from "react-icons/fi";
+import { MdLeaderboard } from "react-icons/md";
 import toast from "react-hot-toast";
 
 const DslrOfficerDashboard = () => {
@@ -14,17 +15,18 @@ const DslrOfficerDashboard = () => {
   const [comparisonResults, setComparisonResults] = useState({ standard: null, advanced: null });
   const [loadingComparison, setLoadingComparison] = useState({ standard: false, advanced: false });
   const [selectedMethod, setSelectedMethod] = useState(null);
+  const [selectedRank, setSelectedRank] = useState({ standard: 1, advanced: 1 });
 
   const loadApplications = () => {
     const allApplications = JSON.parse(localStorage.getItem('mapApplications') || '[]');
     setApplications(allApplications);
-    
+
     // Calculate statistics
     const totalApps = allApplications.length;
     const pendingApps = allApplications.filter(app => app.status === 'Pending DSLR Approval').length;
     const approvedApps = allApplications.filter(app => app.status === 'Approved' || app.status === 'Ready for Download').length;
     const rejectedApps = allApplications.filter(app => app.status === 'Rejected').length;
-    
+
     setStats([
       {
         title: "Total Applications Received",
@@ -47,7 +49,7 @@ const DslrOfficerDashboard = () => {
         color: "bg-red-100 text-red-600",
       },
     ]);
-    
+
     // Load activity logs from localStorage
     const logs = JSON.parse(localStorage.getItem('activityLogs') || '[]');
     setRecentActivityLogs(logs.slice(-5)); // Show last 5 activities
@@ -60,15 +62,15 @@ const DslrOfficerDashboard = () => {
       }
       return app;
     });
-    
+
     localStorage.setItem('mapApplications', JSON.stringify(updatedApplications));
-    
+
     // Add to activity logs
     const logs = JSON.parse(localStorage.getItem('activityLogs') || '[]');
     const newLog = `${new Date().toISOString().split('T')[0]}: Approved application ID ${applicationId}`;
     logs.push(newLog);
     localStorage.setItem('activityLogs', JSON.stringify(logs));
-    
+
     loadApplications();
     toast.success(`Application ${applicationId} approved successfully!`);
   };
@@ -80,15 +82,15 @@ const DslrOfficerDashboard = () => {
       }
       return app;
     });
-    
+
     localStorage.setItem('mapApplications', JSON.stringify(updatedApplications));
-    
+
     // Add to activity logs
     const logs = JSON.parse(localStorage.getItem('activityLogs') || '[]');
     const newLog = `${new Date().toISOString().split('T')[0]}: Rejected application ID ${applicationId}`;
     logs.push(newLog);
     localStorage.setItem('activityLogs', JSON.stringify(logs));
-    
+
     loadApplications();
     toast.error(`Application ${applicationId} rejected.`);
   };
@@ -100,9 +102,9 @@ const DslrOfficerDashboard = () => {
     }
 
     setLoadingComparison(prev => ({ ...prev, [method]: true }));
-    
+
     try {
-      const response = await fetch('http://localhost:5000/api/compare', {
+      const response = await fetch('http://127.0.0.1:5000/api/compare', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -115,7 +117,7 @@ const DslrOfficerDashboard = () => {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         setComparisonResults(prev => ({ ...prev, [method]: data }));
         toast.success(`${method.charAt(0).toUpperCase() + method.slice(1)} comparison completed!`);
@@ -139,20 +141,22 @@ const DslrOfficerDashboard = () => {
 
   const handleDownloadPreview = async (method) => {
     const selectedResult = comparisonResults[method];
-    
+
     if (selectedResult && selectedResult.session_id) {
       try {
         // Generate PDF for preview
-        const pdfResponse = await fetch(`http://localhost:5000/api/generate-pdf/${selectedResult.session_id}`, {
-          method: 'POST'
+        const pdfResponse = await fetch(`http://127.0.0.1:5000/api/generate-pdf/${selectedResult.session_id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ selected_rank: selectedRank[method] || 1 })
         });
-        
+
         const pdfData = await pdfResponse.json();
-        
+
         if (pdfData.success) {
           // Download the PDF for review
-          const downloadResponse = await fetch(`http://localhost:5000/api/download-pdf/${pdfData.pdf_filename}`);
-          
+          const downloadResponse = await fetch(`http://127.0.0.1:5000/api/download-pdf/${pdfData.pdf_filename}`);
+
           if (downloadResponse.ok) {
             const blob = await downloadResponse.blob();
             const url = window.URL.createObjectURL(blob);
@@ -164,7 +168,7 @@ const DslrOfficerDashboard = () => {
             a.click();
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
-            
+
             toast.success(`${method.charAt(0).toUpperCase() + method.slice(1)} PDF downloaded for review!`);
             setSelectedMethod(method);
           } else {
@@ -182,30 +186,31 @@ const DslrOfficerDashboard = () => {
 
   const handleApproveMethod = async (method) => {
     const selectedResult = comparisonResults[method];
-    
+
     if (selectedResult && selectedResult.session_id) {
       try {
         // Update application status and add PDF info
         const updatedApplications = applications.map(app => {
           if (app.id === selectedApplication.id) {
-            return { 
-              ...app, 
+            return {
+              ...app,
               status: 'Ready for Download',
               comparisonMethod: method,
-              sessionId: selectedResult.session_id
+              sessionId: selectedResult.session_id,
+              selectedRank: selectedRank[method] || 1
             };
           }
           return app;
         });
-        
+
         localStorage.setItem('mapApplications', JSON.stringify(updatedApplications));
-        
+
         // Add to activity logs
         const logs = JSON.parse(localStorage.getItem('activityLogs') || '[]');
         const newLog = `${new Date().toISOString().split('T')[0]}: Approved application ID ${selectedApplication.id} with ${method} method`;
         logs.push(newLog);
         localStorage.setItem('activityLogs', JSON.stringify(logs));
-        
+
         loadApplications();
         setShowComparisonModal(false);
         toast.success(`Application approved with ${method} method!`);
@@ -223,8 +228,8 @@ const DslrOfficerDashboard = () => {
   // Filter applications based on search and status
   const filteredApplications = applications.filter(app => {
     const matchesSearch = app.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         app.village.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (app.surveyNumber && app.surveyNumber.toLowerCase().includes(searchTerm.toLowerCase()));
+      app.village.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (app.surveyNumber && app.surveyNumber.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesStatus = statusFilter === 'all' || app.status.toLowerCase().includes(statusFilter.toLowerCase());
     return matchesSearch && matchesStatus;
   });
@@ -365,7 +370,7 @@ const DslrOfficerDashboard = () => {
           </motion.button>
         </div>
         <div className="mt-4">
-          <select 
+          <select
             className="border p-2 rounded"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -440,7 +445,7 @@ const DslrOfficerDashboard = () => {
               <div className="border rounded-lg p-4">
                 <h4 className="text-lg font-semibold mb-3">Standard Comparison</h4>
                 <p className="text-gray-600 mb-4">Uses IoU and Hausdorff distance metrics for basic similarity analysis.</p>
-                
+
                 <button
                   onClick={() => runComparison('standard')}
                   disabled={loadingComparison.standard}
@@ -454,6 +459,22 @@ const DslrOfficerDashboard = () => {
                     <p className="text-sm text-green-800 mb-2">✓ Comparison completed</p>
                     <p className="text-xs text-gray-600">Session ID: {comparisonResults.standard.session_id}</p>
                     <p className="text-xs text-gray-600">Matches found: {comparisonResults.standard.results?.length || 0}</p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <div className="relative flex items-center bg-white border border-gray-200 rounded px-2 py-1 hover:border-gray-300 transition">
+                        <MdLeaderboard className="text-blue-600 mr-1" />
+                        <label className="text-xs text-gray-700 mr-1">Best match</label>
+                        <select
+                          className="appearance-none bg-transparent pr-6 pl-1 py-0.5 text-xs font-medium text-gray-800 focus:outline-none"
+                          value={selectedRank.standard}
+                          onChange={(e) => setSelectedRank(prev => ({ ...prev, standard: parseInt(e.target.value, 10) }))}
+                        >
+                          {(comparisonResults.standard?.results || []).slice(0, 5).map((_, idx) => (
+                            <option key={idx + 1} value={idx + 1}>{idx + 1}</option>
+                          ))}
+                        </select>
+                        <FiChevronDown className="absolute right-1 text-gray-500 pointer-events-none" />
+                      </div>
+                    </div>
                     <button
                       onClick={() => handleDownloadPreview('standard')}
                       className="w-full mt-2 bg-blue-600 text-white py-1 px-3 rounded text-sm hover:bg-blue-700"
@@ -468,7 +489,7 @@ const DslrOfficerDashboard = () => {
               <div className="border rounded-lg p-4">
                 <h4 className="text-lg font-semibold mb-3">Advanced Comparison</h4>
                 <p className="text-gray-600 mb-4">Uses VGG16 neural network for deep feature analysis and similarity.</p>
-                
+
                 <button
                   onClick={() => runComparison('advanced')}
                   disabled={loadingComparison.advanced}
@@ -482,6 +503,22 @@ const DslrOfficerDashboard = () => {
                     <p className="text-sm text-green-800 mb-2">✓ Comparison completed</p>
                     <p className="text-xs text-gray-600">Session ID: {comparisonResults.advanced.session_id}</p>
                     <p className="text-xs text-gray-600">Matches found: {comparisonResults.advanced.results?.length || 0}</p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <div className="relative flex items-center bg-white border border-gray-200 rounded px-2 py-1 hover:border-gray-300 transition">
+                        <MdLeaderboard className="text-purple-600 mr-1" />
+                        <label className="text-xs text-gray-700 mr-1">Best match</label>
+                        <select
+                          className="appearance-none bg-transparent pr-6 pl-1 py-0.5 text-xs font-medium text-gray-800 focus:outline-none"
+                          value={selectedRank.advanced}
+                          onChange={(e) => setSelectedRank(prev => ({ ...prev, advanced: parseInt(e.target.value, 10) }))}
+                        >
+                          {(comparisonResults.advanced?.results || []).slice(0, 5).map((_, idx) => (
+                            <option key={idx + 1} value={idx + 1}>{idx + 1}</option>
+                          ))}
+                        </select>
+                        <FiChevronDown className="absolute right-1 text-gray-500 pointer-events-none" />
+                      </div>
+                    </div>
                     <button
                       onClick={() => handleDownloadPreview('advanced')}
                       className="w-full mt-2 bg-purple-600 text-white py-1 px-3 rounded text-sm hover:bg-purple-700"
@@ -502,11 +539,10 @@ const DslrOfficerDashboard = () => {
                   {comparisonResults.standard && (
                     <button
                       onClick={() => handleApproveMethod('standard')}
-                      className={`px-6 py-3 rounded-lg border-2 transition-all ${
-                        selectedMethod === 'standard'
+                      className={`px-6 py-3 rounded-lg border-2 transition-all ${selectedMethod === 'standard'
                           ? 'border-blue-500 bg-blue-50 text-blue-700'
                           : 'border-gray-300 hover:border-blue-300'
-                      }`}
+                        }`}
                     >
                       <FiDownload className="inline mr-2" />
                       Approve Standard Method
@@ -515,11 +551,10 @@ const DslrOfficerDashboard = () => {
                   {comparisonResults.advanced && (
                     <button
                       onClick={() => handleApproveMethod('advanced')}
-                      className={`px-6 py-3 rounded-lg border-2 transition-all ${
-                        selectedMethod === 'advanced'
+                      className={`px-6 py-3 rounded-lg border-2 transition-all ${selectedMethod === 'advanced'
                           ? 'border-purple-500 bg-purple-50 text-purple-700'
                           : 'border-gray-300 hover:border-purple-300'
-                      }`}
+                        }`}
                     >
                       <FiDownload className="inline mr-2" />
                       Approve Advanced Method

@@ -8,7 +8,7 @@ const CustomForm = () => {
   const [surveyNumber, setSurveyNumber] = useState("");
   const [image, setImage] = useState(null);
   const [inputType, setInputType] = useState("survey"); // "survey" or "image"
-  
+
   // Dynamic data from backend
   const [villages, setVillages] = useState([]);
   const [surveyNumbers, setSurveyNumbers] = useState([]);
@@ -16,71 +16,76 @@ const CustomForm = () => {
   const [loadingSurveyNumbers, setLoadingSurveyNumbers] = useState(false);
 
   const directions = ["North", "South"];
-  
+
   // Fetch villages from backend
-   useEffect(() => {
-     const fetchVillages = async () => {
-       setLoadingVillages(true);
-       try {
-         const response = await fetch('http://localhost:5000/api/villages');
-         if (response.ok) {
-           const data = await response.json();
-           if (data.success) {
-             setVillages(data.villages);
-           } else {
-             throw new Error(data.error);
-           }
-         } else {
-           throw new Error('Failed to fetch villages');
-         }
-       } catch (error) {
-         console.error('Error fetching villages:', error);
-         // Fallback to hardcoded values
-         setVillages([
-           "ambeli", "antorieum", "latambarcem"
-         ]);
-       } finally {
-         setLoadingVillages(false);
-       }
-     };
-     
-     fetchVillages();
-   }, []);
-  
+  useEffect(() => {
+    const fetchVillages = async () => {
+      setLoadingVillages(true);
+      try {
+        const response = await fetch('http://127.0.0.1:5000/api/villages');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setVillages(data.villages);
+          } else {
+            throw new Error(data.error);
+          }
+        } else {
+          throw new Error('Failed to fetch villages');
+        }
+      } catch (error) {
+        console.error('Error fetching villages:', error);
+        // Fallback to hardcoded values
+        setVillages([
+          "ambeli", "antorieum", "latambarcem"
+        ]);
+      } finally {
+        setLoadingVillages(false);
+      }
+    };
+
+    fetchVillages();
+  }, []);
+
   // Fetch survey numbers when village changes
-   useEffect(() => {
-     if (village) {
-       const fetchSurveyNumbers = async () => {
-         setLoadingSurveyNumbers(true);
-         setSurveyNumber(''); // Reset survey number when village changes
-         try {
-           const response = await fetch(`http://localhost:5000/api/village/${village}/survey-numbers`);
-           if (response.ok) {
-             const data = await response.json();
-             if (data.success) {
-               setSurveyNumbers(data.survey_numbers);
-             } else {
-               console.error('Error fetching survey numbers:', data.error);
-               setSurveyNumbers([]);
-             }
-           } else {
-             console.error('Failed to fetch survey numbers');
-             setSurveyNumbers([]);
-           }
-         } catch (error) {
-           console.error('Error fetching survey numbers:', error);
-           setSurveyNumbers([]);
-         } finally {
-           setLoadingSurveyNumbers(false);
-         }
-       };
-       
-       fetchSurveyNumbers();
-     } else {
-       setSurveyNumbers([]);
-       setSurveyNumber('');
-     }
-   }, [village]);
+  useEffect(() => {
+    if (village) {
+      const fetchSurveyNumbers = async () => {
+        setLoadingSurveyNumbers(true);
+        setSurveyNumber(''); // Reset survey number when village changes
+        try {
+          console.log(`Fetching survey numbers for ${village}...`);
+          const response = await fetch(`http://127.0.0.1:5000/api/village/${village}/survey-numbers`);
+          if (response.ok) {
+            const data = await response.json();
+            console.log("Survey numbers response:", data);
+            if (data.success) {
+              setSurveyNumbers(data.survey_numbers);
+              toast.success(`Loaded ${data.survey_numbers.length} survey numbers`);
+            } else {
+              console.error('Error fetching survey numbers:', data.error);
+              toast.error(`Error: ${data.error}`);
+              setSurveyNumbers([]);
+            }
+          } else {
+            console.error('Failed to fetch survey numbers', response.status);
+            toast.error(`Failed to fetch: ${response.statusText}`);
+            setSurveyNumbers([]);
+          }
+        } catch (error) {
+          console.error('Error fetching survey numbers:', error);
+          setSurveyNumbers([]);
+        } finally {
+          setLoadingSurveyNumbers(false);
+        }
+      };
+
+      fetchSurveyNumbers();
+    } else {
+      setSurveyNumbers([]);
+      setSurveyNumber('');
+    }
+  }, [village]);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -106,22 +111,22 @@ const CustomForm = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!direction || !village) {
       toast.error("Please select direction and village");
       return;
     }
-    
+
     if (inputType === "survey" && !surveyNumber) {
       toast.error("Please enter survey number");
       return;
     }
-    
+
     if (inputType === "image" && !image) {
       toast.error("Please upload an image");
       return;
     }
-    
+
     const applicationId = generateApplicationId();
     const applicationData = {
       id: applicationId,
@@ -133,15 +138,15 @@ const CustomForm = () => {
       status: "Pending DSLR Approval",
       type: "Map Comparison Certificate"
     };
-    
+
     // Store in localStorage for demo purposes
     const existingApplications = JSON.parse(localStorage.getItem('mapApplications') || '[]');
     existingApplications.push(applicationData);
     localStorage.setItem('mapApplications', JSON.stringify(existingApplications));
-    
+
     console.log("Application submitted:", applicationData);
     toast.success(`Application submitted successfully! Application ID: ${applicationId}`);
-    
+
     // Reset form
     setDirection("");
     setVillage("");
@@ -233,7 +238,7 @@ const CustomForm = () => {
               {surveyNumbers.map((feature) => {
                 // Create display text for the feature
                 let displayText = `Feature ${feature.index}`;
-                
+
                 // Add any additional identifying information if available
                 const identifiers = ['id', 'plot_id', 'survey_no', 'plot_no', 'number', 'name'];
                 for (const key of identifiers) {
@@ -242,7 +247,7 @@ const CustomForm = () => {
                     break;
                   }
                 }
-                
+
                 return (
                   <option key={feature.index} value={feature.index}>
                     {displayText}
