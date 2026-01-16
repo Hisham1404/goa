@@ -53,3 +53,11 @@ dist/
 
 # Reports
 pdf_reports/*.pdf
+
+img_reference/
+maps/latambarcem/
+share/
+Scripts/
+pyvenv.cfg
+
+
